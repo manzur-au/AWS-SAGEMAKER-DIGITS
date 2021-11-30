@@ -1,0 +1,130 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+  box-sizing: border-box;
+}
+  body {
+background-color: #e5e5e5;
+}
+</style>
+</head>
+  
+<script type="text/Javascript">
+	
+    var pixels = [];
+    for (var i = 0; i < 28*28; i++) pixels[i] = 0;
+    var click = 0;
+    var canvas = document.querySelector("myCanvas");
+    document.addEventListener("mouseup", stop);
+    document.addEventListener("mousedown", start);
+  
+    function stop() {
+      document.removeEventListener("mousemove",getMousePos);
+      let data = set_value();
+      document.getElementById("demo2").innerHTML = data;
+    }
+  
+    function start(event) {
+      //document.getElementById("demo").innerHTML = "HH";
+      document.addEventListener("mousemove", getMousePos)
+    }
+    
+    function getMousePos(e) {
+      if (e.buttons == 1){
+          x = Math.floor(e.offsetY * 0.19);
+          y = Math.floor(e.offsetX * 0.19) + 1;
+          for (var dy = 0; dy < 3; dy++){
+              for (var dx = 0; dx < 3; dx++){
+                  if ((x + dx < 28) && (y + dy < 28)){
+                  
+                      pixels[(y+dy)+(x+dx)*28] = 1;
+                  }
+              }
+          }
+      }
+    }
+    
+    function clear_value(){
+      
+        for (var i = 0; i < 28*28; i++) pixels[i] = 0;
+        document.getElementById("demo").innerHTML = "_";
+        let data = set_value();
+        document.getElementById("demo2").innerHTML = data;
+    }
+
+    function set_value(){
+        var result = "[[["
+        for (var i = 0; i < 28; i++) {
+            result += "["
+            for (var j = 0; j < 28; j++) {
+                result += pixels [i * 28 + j]
+                if (j < 27) {
+                    result += ", "
+                }
+            }
+            result += "]"
+            if (i < 27) {
+                result += ", "
+            }
+        }
+        result += "]]]"
+		return result
+        //var kernel = IPython.notebook.kernel;
+        //kernel.execute("data = " + result)
+    }
+</script>
+
+
+
+
+<script>
+async function sendImageToModel() {
+  
+      let data = set_value();
+      document.getElementById("demo2").innerHTML = data;
+      let payload = {
+          "data" : data
+      }
+      let response = await fetch('https://5xr9ua7vv6.execute-api.ap-southeast-2.amazonaws.com/myProd', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          dataType: 'json',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+      });
+      let myJson = await response.json();
+	  document.getElementById("demo").innerHTML = "Prediction: "+ myJson;
+      for (var i = 0; i < 28*28; i++) pixels[i] = 0;
+      return myJson;
+  }
+</script>
+<body>
+<div class="buttons" style = "position: absolute; z-index: 1; top:157px; left:1%; display: block; min-width:252px; height:auto;">
+<button onclick="sendImageToModel()" style = "padding: 5px 12px;">Submit</button>
+<button onclick="clear_value()" style = "padding: 5px 16px;" >Clear</button>
+</div>
+
+<div class="canv" style = "position: absolute; z-index: 1; top:10px; left:1%; display: block; min-width:252px; height:auto;"> 
+  <canvas id="myCanvas" width="140" height="140" style="border:1px solid #000000;"></canvas>
+</div>
+
+<div class="buttons" style = "position: absolute; z-index: 1; top:177px; left:1%; display: block; min-width:142px; height:auto;">
+<p id="demo" style="border:1px solid #000000;text-align:center"></p>
+</div>
+
+<div style="position: absolute; z-index: 1; top:17px; left:35%; display: block; min-width:252px; height:auto;;padding:15px;text-align:center;">
+  <h1>Digit Recognizer</h1>
+  <p style="color:blue;">Draw a hidden digit in the canvas by clicking and dragging your mouse. Submit for prediction and clear before next try.</p>
+<p>Disclaimer: This is a demo to test AWS sagemaker model deployment in EC2.</p>
+  <p>This webpage is hosted in S3. Invocation uses AWS Lambda Function nad REST API.</p>
+  <p>© tahmid.hossain007@gmail.com</p>
+</div>  
+  
+<div style="position:fixed; z-index: 1; top:260px; left:1%; display: block; min-width:452px; height:auto;width: 475px; height: 530px;">
+<p id="demo2" style = "background-color:white;border:1px solid #000000;"></p>
+</div>
+</body>
+</html>
